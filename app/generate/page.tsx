@@ -1,6 +1,9 @@
 'use client';
 
 import { useState, FormEvent } from 'react';
+import { BusinessIdeaCard } from '@/components/ui/BusinessIdeaCard';
+import { LoadingState } from '@/components/ui/LoadingState';
+import type { GenerateIdeasResponse } from '@/types/api';
 
 /**
  * Generate Business Ideas Page
@@ -37,7 +40,7 @@ export default function GeneratePage() {
   });
 
   const [isLoading, setIsLoading] = useState(false);
-  const [results, setResults] = useState<any>(null);
+  const [results, setResults] = useState<GenerateIdeasResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleInputChange = (
@@ -86,10 +89,14 @@ export default function GeneratePage() {
 
       if (!response.ok) {
         const errorData: ApiError = await response.json();
-        throw new Error(errorData.error || `Error: ${response.statusText}`);
+        const errorMessage = errorData.error || `Error: ${response.statusText}`;
+        const errorDetails = errorData.details 
+          ? `${errorMessage}: ${errorData.details.join(', ')}`
+          : errorMessage;
+        throw new Error(errorDetails);
       }
 
-      const data = await response.json();
+      const data: GenerateIdeasResponse = await response.json();
       setResults(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred while generating ideas');
@@ -308,6 +315,13 @@ export default function GeneratePage() {
         </div>
       </form>
 
+      {/* Loading State */}
+      {isLoading && (
+        <div className="mt-8">
+          <LoadingState message="Generating business ideas..." fullScreen={false} />
+        </div>
+      )}
+
       {/* Error Display */}
       {error && (
         <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-md">
@@ -316,25 +330,39 @@ export default function GeneratePage() {
         </div>
       )}
 
-      {/* Results Placeholder */}
-      {results && (
+      {/* Results Display */}
+      {results && !isLoading && (
         <div className="mt-8">
-          <h2 className="text-2xl font-bold mb-4">Generated Ideas</h2>
-          <div className="space-y-4">
-            <div className="p-4 bg-gray-50 border border-gray-200 rounded-md">
-              <p className="text-sm text-gray-600 mb-2">
-                Request ID: {results.requestId}
-              </p>
-              <p className="text-sm text-gray-600 mb-4">
-                Generated: {new Date(results.generatedAt).toLocaleString()}
-              </p>
-              <p className="font-medium mb-2">
-                {results.metadata?.count || 0} ideas generated
-              </p>
-              <pre className="bg-white p-4 rounded border overflow-auto text-xs">
-                {JSON.stringify(results, null, 2)}
-              </pre>
+          <div className="mb-6 pb-4 border-b border-gray-200">
+            <h2 className="text-2xl font-bold mb-2">Generated Ideas</h2>
+            <div className="flex gap-4 text-sm text-gray-600">
+              <span>Request ID: {results.requestId}</span>
+              <span>•</span>
+              <span>Generated: {new Date(results.generatedAt).toLocaleString()}</span>
+              <span>•</span>
+              <span>{results.metadata.count} idea{results.metadata.count !== 1 ? 's' : ''}</span>
+              {results.metadata.qualityMetrics && (
+                <>
+                  <span>•</span>
+                  <span>Avg Score: {results.metadata.qualityMetrics.averageScore.toFixed(1)}/100</span>
+                </>
+              )}
             </div>
+          </div>
+
+          {/* Display Business Ideas using BusinessIdeaCard component */}
+          <div className="space-y-6">
+            {results.ideas.map((idea) => (
+              <BusinessIdeaCard
+                key={idea.id}
+                idea={idea}
+                showDetails={true}
+                onClick={() => {
+                  // TODO: Navigate to idea detail page or show modal
+                  console.log('Idea clicked:', idea.id);
+                }}
+              />
+            ))}
           </div>
         </div>
       )}

@@ -45,12 +45,14 @@ export async function generateIdeas(
     },
   ];
 
-  // TODO: Uncomment when OpenAI integration is ready
+  // TODO: REAL OPENAI INTEGRATION - Uncomment and configure when OpenAI API key is set up
+  // Step 1: Call OpenAI API
   // const completion = await openaiClient.chat.completions.create({
   //   model: getDefaultModel(),
   //   messages,
   //   temperature: 0.7,
   //   max_tokens: 4000,
+  //   response_format: { type: 'json_object' }, // Request JSON format for easier parsing
   // });
   // 
   // const aiResponse = completion.choices[0]?.message?.content;
@@ -58,11 +60,25 @@ export async function generateIdeas(
   //   throw new Error('No response from AI service');
   // }
   // 
-  // // Parse AI response into structured ideas
-  // const ideas = parseAIResponseToIdeas(aiResponse, request, userProfile?.id);
+  // // Step 2: Format AI response using formatter
+  // // This will parse the raw AI text into structured BusinessIdea objects
+  // const { formatBusinessIdeasFromAI } = await import('@/lib/formatters/businessIdeaFormatter');
+  // const ideas = await formatBusinessIdeasFromAI(
+  //   aiResponse,
+  //   enhancedRequest.count || 3,
+  //   {
+  //     userId: userProfile?.id,
+  //     defaultIndustry: enhancedRequest.industries?.[0],
+  //     defaultIdeaType: enhancedRequest.ideaTypes?.[0],
+  //     defaultBusinessModel: enhancedRequest.businessModels?.[0],
+  //     defaultCurrency: enhancedRequest.budgetRange?.currency || 'USD',
+  //   }
+  // );
+  // 
+  // const tokensUsed = completion.usage?.total_tokens;
 
-  // For now, return structured mock data
-  // This maintains the same interface and can be swapped with real AI parsing
+  // TEMPORARY: Mock data generation until OpenAI integration is complete
+  // This maintains the same interface and can be swapped with real AI parsing above
   const ideas = generateMockIdeas(enhancedRequest, userProfile?.id);
 
   const generationTimeMs = Date.now() - startTime;
@@ -83,7 +99,7 @@ export async function generateIdeas(
       count: ideas.length,
       generationTimeMs,
       model: getDefaultModel(),
-      tokensUsed: undefined, // Will be populated from AI response
+      tokensUsed: undefined, // TODO: Set from completion.usage?.total_tokens when OpenAI is integrated
       qualityMetrics,
     },
     requestId,
